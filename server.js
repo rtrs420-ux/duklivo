@@ -14,6 +14,10 @@ const pool = new Pool({
 app.use(express.json({ limit: '50mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ ok: true });
+});
+
 // Database Table Setup
 pool.query(`
   CREATE TABLE IF NOT EXISTS store (
