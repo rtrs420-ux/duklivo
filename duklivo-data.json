@@ -1,0 +1,422 @@
+{
+  "branches": [
+    {
+      "id": "BR1",
+      "name": "Main Store",
+      "address": "MG Road, Delhi"
+    },
+    {
+      "id": "BR2",
+      "name": "Branch 2",
+      "address": "Karol Bagh, Delhi"
+    }
+  ],
+  "staff": [
+    {
+      "id": "S1",
+      "name": "Rahul",
+      "phone": "9999999999",
+      "role": "owner",
+      "pin": "1234",
+      "active": true
+    },
+    {
+      "id": "S2",
+      "name": "Priya",
+      "phone": "8888888888",
+      "role": "cashier",
+      "pin": "5678",
+      "active": true
+    }
+  ],
+  "products": [
+    {
+      "id": "P1",
+      "name": "Aata 5kg",
+      "price": 250,
+      "buy": 210,
+      "gst": 5,
+      "stocks": {
+        "BR1": 18,
+        "BR2": 10
+      },
+      "minStock": 5
+    },
+    {
+      "id": "P2",
+      "name": "Tel 1L",
+      "price": 180,
+      "buy": 150,
+      "gst": 5,
+      "stocks": {
+        "BR1": 15,
+        "BR2": 8
+      },
+      "minStock": 3
+    },
+    {
+      "id": "P3",
+      "name": "Chawal 1kg",
+      "price": 60,
+      "buy": 50,
+      "gst": 5,
+      "stocks": {
+        "BR1": 9,
+        "BR2": 6
+      },
+      "minStock": 4
+    },
+    {
+      "id": "P4",
+      "name": "Cheeni 1kg",
+      "price": 45,
+      "buy": 38,
+      "gst": 5,
+      "stocks": {
+        "BR1": 10,
+        "BR2": 5
+      },
+      "minStock": 3
+    },
+    {
+      "id": "P5",
+      "name": "Doodh 500ml",
+      "price": 30,
+      "buy": 25,
+      "gst": 0,
+      "stocks": {
+        "BR1": 5,
+        "BR2": 4
+      },
+      "minStock": 5
+    },
+    {
+      "id": "P6",
+      "name": "Biscuit",
+      "price": 20,
+      "buy": 15,
+      "gst": 18,
+      "stocks": {
+        "BR1": 2,
+        "BR2": 1
+      },
+      "minStock": 5
+    },
+    {
+      "id": "P7",
+      "name": "Shampoo",
+      "price": 120,
+      "buy": 95,
+      "gst": 18,
+      "stocks": {
+        "BR1": 5,
+        "BR2": 3
+      },
+      "minStock": 3
+    },
+    {
+      "id": "P8",
+      "name": "Sabun",
+      "price": 40,
+      "buy": 30,
+      "gst": 18,
+      "stocks": {
+        "BR1": 1,
+        "BR2": 2
+      },
+      "minStock": 5
+    }
+  ],
+  "customers": [
+    {
+      "id": "CUST-1",
+      "name": "ravi",
+      "phone": "7204488785",
+      "due": 0,
+      "bills": [
+        "BILL-3"
+      ],
+      "payments": [
+        {
+          "amount": 93,
+          "date": "30/10/2026, 11:21:45 pm",
+          "mode": "Cash"
+        }
+      ],
+      "loyalty": 0
+    },
+    {
+      "id": "CUST-2",
+      "name": "ravi",
+      "phone": "7415474521",
+      "due": 0,
+      "bills": [
+        "BILL-4"
+      ],
+      "payments": [
+        {
+          "amount": 497.1,
+          "date": "30/10/2026, 11:50:54 pm",
+          "mode": "Cash"
+        }
+      ],
+      "loyalty": 4
+    }
+  ],
+  "bills": [
+    {
+      "id": "BILL-1",
+      "timestamp": 1793382326928,
+      "date": "30/10/2026, 11:15:26 pm",
+      "branchId": "BR1",
+      "staffId": "S1",
+      "staffName": "Rahul",
+      "customerId": null,
+      "customerName": "Walk-in",
+      "items": [
+        {
+          "productId": "P1",
+          "name": "Aata 5kg",
+          "price": 250,
+          "buy": 210,
+          "qty": 1,
+          "gst": 5,
+          "effectivePrice": 250
+        }
+      ],
+      "subtotal": 250,
+      "cartDiscount": 0,
+      "gstTotal": 12.5,
+      "costTotal": 210,
+      "total": 262.5,
+      "profit": 40,
+      "paid": 262.5,
+      "due": 0,
+      "mode": "Cash"
+    },
+    {
+      "id": "BILL-2",
+      "timestamp": 1793382661809,
+      "date": "30/10/2026, 11:21:01 pm",
+      "branchId": "BR1",
+      "staffId": "S1",
+      "staffName": "Rahul",
+      "customerId": null,
+      "customerName": "Walk-in",
+      "items": [
+        {
+          "productId": "P5",
+          "name": "Doodh 500ml",
+          "price": 30,
+          "buy": 25,
+          "qty": 1,
+          "gst": 0,
+          "effectivePrice": 30
+        },
+        {
+          "productId": "P3",
+          "name": "Chawal 1kg",
+          "price": 60,
+          "buy": 50,
+          "qty": 1,
+          "gst": 5,
+          "effectivePrice": 60
+        }
+      ],
+      "subtotal": 90,
+      "cartDiscount": 0,
+      "gstTotal": 3,
+      "costTotal": 75,
+      "total": 93,
+      "profit": 15,
+      "paid": 93,
+      "due": 0,
+      "mode": "Cash",
+      "pointsEarned": 0
+    },
+    {
+      "id": "BILL-3",
+      "timestamp": 1793382705444,
+      "date": "30/10/2026, 11:21:45 pm",
+      "branchId": "BR1",
+      "staffId": "S1",
+      "staffName": "Rahul",
+      "customerId": "CUST-1",
+      "customerName": "ravi",
+      "items": [
+        {
+          "productId": "P5",
+          "name": "Doodh 500ml",
+          "price": 30,
+          "buy": 25,
+          "qty": 1,
+          "gst": 0,
+          "effectivePrice": 30
+        },
+        {
+          "productId": "P3",
+          "name": "Chawal 1kg",
+          "price": 60,
+          "buy": 50,
+          "qty": 1,
+          "gst": 5,
+          "effectivePrice": 60
+        }
+      ],
+      "subtotal": 90,
+      "cartDiscount": 0,
+      "gstTotal": 3,
+      "costTotal": 75,
+      "total": 93,
+      "profit": 15,
+      "paid": 93,
+      "due": 0,
+      "mode": "Cash",
+      "pointsEarned": 0
+    },
+    {
+      "id": "BILL-4",
+      "timestamp": 1793384454795,
+      "date": "30/10/2026, 11:50:54 pm",
+      "branchId": "BR1",
+      "staffId": "S1",
+      "staffName": "Rahul",
+      "customerId": "CUST-2",
+      "customerName": "ravi",
+      "items": [
+        {
+          "productId": "P5",
+          "name": "Doodh 500ml",
+          "price": 30,
+          "buy": 25,
+          "qty": 1,
+          "gst": 0,
+          "effectivePrice": 30
+        },
+        {
+          "productId": "P7",
+          "name": "Shampoo",
+          "price": 120,
+          "buy": 95,
+          "qty": 1,
+          "gst": 18,
+          "effectivePrice": 120
+        },
+        {
+          "productId": "P3",
+          "name": "Chawal 1kg",
+          "price": 60,
+          "buy": 50,
+          "qty": 1,
+          "gst": 5,
+          "effectivePrice": 60
+        },
+        {
+          "productId": "P1",
+          "name": "Aata 5kg",
+          "price": 250,
+          "buy": 210,
+          "qty": 1,
+          "gst": 5,
+          "effectivePrice": 250
+        }
+      ],
+      "subtotal": 460,
+      "cartDiscount": 0,
+      "gstTotal": 37.1,
+      "costTotal": 380,
+      "total": 497.1,
+      "profit": 80,
+      "paid": 497.1,
+      "due": 0,
+      "mode": "Cash",
+      "pointsEarned": 4
+    }
+  ],
+  "suppliers": [],
+  "purchases": [],
+  "offers": [],
+  "activities": [
+    {
+      "id": "A1",
+      "timestamp": 1793382326929,
+      "staffId": "S1",
+      "staffName": "Rahul",
+      "branchId": "BR1",
+      "action": "Bill Created",
+      "detail": "BILL-1 · ₹263"
+    },
+    {
+      "id": "A2",
+      "timestamp": 1793382661809,
+      "staffId": "S1",
+      "staffName": "Rahul",
+      "branchId": "BR1",
+      "action": "Bill Created",
+      "detail": "BILL-2 · ₹93"
+    },
+    {
+      "id": "A3",
+      "timestamp": 1793382705444,
+      "staffId": "S1",
+      "staffName": "Rahul",
+      "branchId": "BR1",
+      "action": "Bill Created",
+      "detail": "BILL-3 · ₹93"
+    },
+    {
+      "id": "A4",
+      "timestamp": 1793384454798,
+      "staffId": "S1",
+      "staffName": "Rahul",
+      "branchId": "BR1",
+      "action": "Bill Created",
+      "detail": "BILL-4 · ₹497"
+    },
+    {
+      "id": "A5",
+      "timestamp": 1793467826450,
+      "staffId": "S2",
+      "staffName": "Priya",
+      "branchId": "BR1",
+      "action": "Login",
+      "detail": "Priya logged in"
+    },
+    {
+      "id": "A6",
+      "timestamp": 1793467907558,
+      "staffId": "S2",
+      "staffName": "Priya",
+      "branchId": "BR1",
+      "action": "Logout",
+      "detail": "Priya logged out"
+    },
+    {
+      "id": "A7",
+      "timestamp": 1793468786565,
+      "staffId": "S1",
+      "staffName": "Rahul",
+      "branchId": "BR1",
+      "action": "Login",
+      "detail": "Rahul logged in"
+    },
+    {
+      "id": "A8",
+      "timestamp": 1793469082348,
+      "staffId": "S1",
+      "staffName": "Rahul",
+      "branchId": "BR1",
+      "action": "Logout",
+      "detail": "Rahul logged out"
+    },
+    {
+      "id": "A9",
+      "timestamp": 1793469097674,
+      "staffId": "S1",
+      "staffName": "Rahul",
+      "branchId": "BR1",
+      "action": "Login",
+      "detail": "Rahul logged in"
+    }
+  ]
+}

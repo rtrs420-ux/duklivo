@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>DukLivo - Live Demo</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: linear-gradient(135deg, #0d47a1, #1a73e8);
+      color: white;
+      font-family: 'Arial', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      text-align: center;
+    }
+    h1 { font-size: 4rem; margin-bottom: 10px; text-shadow: 2px 2px 10px rgba(0,0,0,0.3); }
+    p { font-size: 1.5rem; opacity: 0.9; margin-bottom: 40px; }
+    
+    /* QR Box */
+    #qrcode {
+      background: white;
+      padding: 25px;
+      border-radius: 20px;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+      transition: transform 0.3s;
+    }
+    #qrcode:hover { transform: scale(1.05); }
+    
+    .instruction { 
+      margin-top: 40px; 
+      font-size: 1.5rem; 
+      background: rgba(255, 255, 255, 0.2); 
+      padding: 10px 30px; 
+      border-radius: 50px;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+  </style>
+</head>
+<body>
+  <h1>🛒 DukLivo</h1>
+  <p>One App. Every Business.</p>
+  
+  <div id="qrcode"></div>
+  
+  <div class="instruction">📱 Scan with your phone camera to experience!</div>
+
+  <script>
+    // Tumhara abhi ka Ngrok link yahan daala hai
+    const liveLink = "https://regulator-mud-transfer.ngrok-free.dev";
+    
+    new QRCode(document.getElementById("qrcode"), {
+      text: liveLink,
+      width: 300,
+      height: 300,
+      colorDark : "#000000",
+      colorLight : "#ffffff",
+      correctLevel : QRCode.CorrectLevel.H
+    });
+  </script>
+</body>
+</html>

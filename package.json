@@ -1,0 +1,13 @@
+{
+  "name": "duklivo",
+  "version": "7.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "pg": "^8.23.1",
+    "sqlite3": "^6.0.1"
+  }
+}

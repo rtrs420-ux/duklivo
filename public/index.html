@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>DukLivo - Cinematic Premium</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#000000">
+  <link rel="manifest" href="/manifest.json">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  
+  <style>
+    :root {
+      --card-bg: rgba(15, 15, 20, 0.85); 
+      --card-border: rgba(255, 255, 255, 0.12);
+      --text: #f5f5f7; 
+      --text-muted: #a1a1a6;
+      --border: rgba(255, 255, 255, 0.1);
+      --primary: #0a84ff; 
+      --primary-hover: #409cff;
+      --green: #34c759; --red: #ff3b30; --orange: #ff9500; --purple: #af52de;
+      --shadow: 0 20px 40px rgba(0, 0, 0, 0.7);
+      --blur: blur(35px);
+    }
+    
+    body.light-mode {
+      --card-bg: rgba(255, 255, 255, 0.85);
+      --card-border: rgba(0, 0, 0, 0.1);
+      --text: #1d1d1f; 
+      --text-muted: #555;
+      --border: rgba(0, 0, 0, 0.1);
+      --primary: #0071e3; 
+      --shadow: 0 15px 35px rgba(0,0,0,0.1);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', -apple-system, sans-serif; }
+    
+    body { 
+      color: var(--text); 
+      min-height: 100vh; 
+      background-color: #000; 
+      overflow-x: hidden; 
+      display: flex; 
+      flex-direction: column; 
+    }
+
+    /* 3D EARTH CANVAS */
+    #earth-canvas { 
+      position: fixed; 
+      top: 0; 
+      left: 0; 
+      width: 100vw; 
+      height: 100vh; 
+      z-index: -2; 
+      pointer-events: none; 
+    }
+    
+    /* VIGNETTE OVERLAY */
+    #bg-overlay { 
+      position: fixed; 
+      inset: 0; 
+      background: radial-gradient(circle at center, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.9) 100%);
+      z-index: -1; 
+      pointer-events: none; 
+      transition: background 0.3s ease; 
+    }
+    
+    body.light-mode #bg-overlay { 
+      background: radial-gradient(circle at center, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.95) 100%); 
+    }
+
+    #app-wrapper { position: relative; z-index: 10; padding: 20px; flex: 1; }
+    
+    /* ================= LOGIN SCREEN ================= */
+    #loginScreen { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 100; }
+    .login-card { 
+      background: var(--card-bg); backdrop-filter: var(--blur); border: 1px solid var(--card-border); 
+      padding: 50px 40px; border-radius: 30px; width: 380px; text-align: center; 
+      box-shadow: var(--shadow); color: var(--text); 
+    }
+    .login-card h1 { font-size: 34px; font-weight: 600; margin-bottom: 8px; display: flex; justify-content: center; align-items: center; gap: 10px; }
+    .login-card h1 small { display: block; font-size: 12px; color: var(--text-muted); font-weight: 500; margin-top: 8px; text-transform: uppercase; letter-spacing: 1px; }
+    
+    #loginPin { 
+      width: 100%; padding: 18px; font-size: 24px; text-align: center; letter-spacing: 12px; 
+      border: 1px solid var(--border); border-radius: 16px; margin: 30px 0 20px; 
+      background: rgba(0,0,0,0.3); color: var(--text); outline: none; 
+    }
+    body.light-mode #loginPin { background: rgba(255,255,255,0.5); }
+    
+    .login-card button { width: 100%; padding: 16px; font-size: 16px; border-radius: 16px; background: var(--primary); color: white; border: none; font-weight: 600; cursor: pointer; transition: 0.2s; }
+    .login-card button:hover { background: var(--primary-hover); }
+    .login-hint { font-size: 13px; color: var(--text-muted); margin-top: 25px; line-height: 1.8; }
+
+    /* ================= MAIN APP LAYOUT ================= */
+    header { max-width: 1200px; margin: 0 auto 30px; text-align: center; }
+    header h1 { color: var(--text); font-size: 28px; font-weight: 600; margin-bottom: 10px; text-shadow: 0 4px 15px rgba(0,0,0,0.8); letter-spacing: -0.5px; }
+    header h1 small { color: var(--text-muted); display: block; font-size: 13px; font-weight: 400; }
+    
+    .topbar, .card, .stat-box { 
+      background: var(--card-bg); 
+      backdrop-filter: var(--blur); 
+      border: 1px solid var(--card-border); 
+      box-shadow: var(--shadow); 
+    }
+
+    .topbar { display: flex; justify-content: space-between; align-items: center; padding: 15px 25px; border-radius: 20px; margin-bottom: 24px; font-size: 14px; flex-wrap: wrap; gap: 10px; }
+    .topbar select { padding: 10px 15px; font-size: 14px; border-radius: 12px; border: 1px solid var(--border); background: rgba(0,0,0,0.2); color: var(--text); outline: none; font-weight: 500; }
+    body.light-mode .topbar select { background: rgba(255,255,255,0.5); }
+    
+    .topbar .user-info { display: flex; align-items: center; gap: 15px; font-weight: 500; }
+    .topbar button { padding: 10px 20px; font-size: 14px; border-radius: 12px; background: var(--red); color: white; border: none; cursor: pointer; font-weight: 500; }
+    
+    .tabs-wrapper { display: flex; justify-content: center; margin-bottom: 30px; width: 100%; }
+    .tabs { display: flex; gap: 8px; flex-wrap: wrap; background: rgba(0, 0, 0, 0.4); padding: 8px; border-radius: 16px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.05); }
+    body.light-mode .tabs { background: rgba(255, 255, 255, 0.6); border-color: rgba(0,0,0,0.05); }
+    
+    .tab { padding: 10px 20px; border: none; background: transparent; color: #ffffff; border-radius: 12px; cursor: pointer; font-size: 14px; font-weight: 600; transition: 0.2s; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+    body.light-mode .tab { color: #333; text-shadow: none; }
+    .tab:hover { background: rgba(255,255,255,0.1); }
+    body.light-mode .tab:hover { background: rgba(0,0,0,0.05); }
+    .tab.active { background: var(--card-bg); color: var(--text); box-shadow: 0 4px 15px rgba(0,0,0,0.4); border: 1px solid var(--card-border); text-shadow: none; }
+    
+    .tab-content { display: none; animation: fadeIn 0.3s ease; }
+    .tab-content.active { display: flex; }
+    .flex-col { flex-direction: column; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    
+    .app { max-width: 1200px; margin: auto; gap: 24px; flex-wrap: wrap; }
+    .card { padding: 24px; border-radius: 24px; flex: 1; min-width: 300px; }
+    h3 { color: var(--text); font-size: 18px; font-weight: 600; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+    
+    input, select, textarea { width: 100%; padding: 14px 16px; margin: 8px 0; border: 1px solid var(--border); border-radius: 12px; font-size: 15px; background: rgba(0,0,0,0.3); color: var(--text); outline: none; transition: 0.2s; }
+    body.light-mode input, body.light-mode select, body.light-mode textarea { background: rgba(255,255,255,0.5); }
+    input:focus, select:focus { border-color: var(--primary); }
+    
+    button { padding: 12px 20px; background: var(--primary); color: white; border: none; border-radius: 12px; cursor: pointer; font-size: 15px; font-weight: 500; transition: 0.2s; }
+    button:hover { background: var(--primary-hover); }
+    .btn-green { background: var(--green); } .btn-red { background: var(--red); padding: 8px 16px; font-size: 13px; border-radius: 10px; }
+    .btn-sm { padding: 8px 14px; font-size: 13px; border-radius: 10px; } .btn-orange { background: var(--orange); } .btn-purple { background: var(--purple); }
+    
+    .products { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+    .product-btn { padding: 16px; background: rgba(255,255,255,0.05); border: 1px solid var(--card-border); border-radius: 16px; cursor: pointer; text-align: left; font-size: 14px; font-weight: 500; position: relative; color: var(--text); }
+    .product-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow); background: rgba(255,255,255,0.1); }
+    body.light-mode .product-btn { background: rgba(255,255,255,0.6); }
+    .product-btn small { display: block; color: var(--text-muted); font-size: 12px; margin-top: 6px; }
+    .stock-badge { position: absolute; top: 12px; right: 12px; background: rgba(52, 199, 89, 0.2); color: var(--green); padding: 2px 8px; border-radius: 8px; font-size: 11px; }
+    .stock-badge.low { background: rgba(255, 59, 48, 0.2); color: var(--red); }
+    
+    .bill-item { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--border); font-size: 15px; }
+    .bill-item small { color: var(--text-muted); font-size: 13px; display: block; margin-top: 4px; }
+    .summary-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 15px; color: var(--text-muted); }
+    .summary-row.total { font-size: 24px; font-weight: 600; color: var(--text); border-top: 1px solid var(--border); margin-top: 12px; padding-top: 16px; }
+    
+    .cust-box { background: rgba(0,0,0,0.3); padding: 20px; border-radius: 20px; margin-top: 20px; border: 1px solid var(--border); }
+    body.light-mode .cust-box { background: rgba(255,255,255,0.4); }
+    .cust-box h4 { font-size: 15px; color: var(--text); margin-bottom: 12px; }
+    
+    .empty { text-align: center; color: var(--text-muted); padding: 20px; font-size: 15px; }
+    .customer-row, .supplier-row, .offer-row, .product-row, .staff-row, .branch-row, .activity-row { display: flex; justify-content: space-between; align-items: center; padding: 16px; border-bottom: 1px solid var(--border); font-size: 15px; gap: 10px; }
+    .customer-row:hover, .product-row:hover, .bill-row:hover { background: rgba(255,255,255,0.05); }
+    body.light-mode .customer-row:hover, body.light-mode .product-row:hover, body.light-mode .bill-row:hover { background: rgba(0,0,0,0.03); }
+    
+    .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; align-items: start; margin-bottom: 24px; }
+    .stat-box { padding: 24px; border-radius: 20px; color: #fff; position: relative; overflow: hidden; background: var(--card-bg); border: 1px solid var(--card-border); backdrop-filter: var(--blur); box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 16px; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); }
+    .stat-box:hover { transform: translateY(-5px); border-color: rgba(255, 255, 255, 0.25); }
+    .stat-box::after { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at top right, rgba(255,255,255,0.08), transparent 50%); opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+    .stat-box:hover::after { opacity: 1; }
+    .stat-header { display: flex; align-items: center; gap: 12px; }
+    .stat-icon { width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.15); }
+    .stat-sales .stat-icon { background: rgba(10, 132, 255, 0.2); border-color: rgba(10, 132, 255, 0.4); }
+    .stat-profit .stat-icon { background: rgba(52, 199, 89, 0.2); border-color: rgba(52, 199, 89, 0.4); }
+    .stat-bills .stat-icon { background: rgba(175, 82, 222, 0.2); border-color: rgba(175, 82, 222, 0.4); }
+    .stat-due .stat-icon { background: rgba(255, 59, 48, 0.2); border-color: rgba(255, 59, 48, 0.4); }
+    .stat-stock .stat-icon { background: rgba(255, 149, 0, 0.2); border-color: rgba(255, 149, 0, 0.4); }
+    .stat-box small { font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    body.dark .stat-box small { color: rgba(255,255,255,0.7); }
+    .stat-box h2 { font-size: 36px; font-weight: 700; color: var(--text); margin: 0; letter-spacing: -1px; }
+    
+    .chart-container { position: relative; height: 300px; width: 100%; margin-top: 20px; }
+    .bill-row { display: flex; justify-content: space-between; align-items: center; padding: 16px; border-bottom: 1px solid var(--border); font-size: 14px; cursor: pointer; border-radius: 12px; }
+    .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 100; }
+    .modal-bg.show { display: flex; }
+    .modal { background: var(--card-bg); color: var(--text); padding: 30px; border-radius: 24px; max-width: 450px; width: 100%; max-height: 90vh; overflow-y: auto; border: 1px solid var(--card-border); backdrop-filter: var(--blur); box-shadow: var(--shadow); }
+    .due-badge, .status-badge, .role-badge { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+    .due-badge.pending { background: rgba(255, 59, 48, 0.2); color: var(--red); }
+    .due-badge.clear { background: rgba(52, 199, 89, 0.2); color: var(--green); }
+    
+    .welcome-text { text-align: center; font-size: 18px; font-weight: 400; color: var(--text-muted); margin-top: 10px; margin-bottom: 30px; letter-spacing: 0.5px; text-shadow: 0 2px 10px rgba(0,0,0,0.8); }
+    .welcome-text strong { color: var(--text); font-weight: 600; }
+    body.light-mode .welcome-text { text-shadow: none; color: #555; }
+    body.light-mode .welcome-text strong { color: #1d1d1f; }
+    
+    .hide { display: none !important; }
+    
+    @media print { body * { visibility: hidden; } #printArea, #printArea * { visibility: visible; color: black !important; } #printArea { position: absolute; left: 0; top: 0; width: 100%; padding: 20px; background: white; } .no-print { display: none !important; } }
+  </style>
+</head>
+<body>
+  <canvas id="earth-canvas"></canvas>
+  <div id="bg-overlay"></div>
+
+  <div id="app-wrapper">
+    <div id="loginScreen">
+      <div class="login-card">
+        <h1>🛒 DukLivo<small>One App. Every Business.</small></h1>
+        <input id="loginPin" type="password" maxlength="4" placeholder="••••" onkeypress="if(event.key==='Enter') login()">
+        <button onclick="login()">Login to Dashboard</button>
+        <div class="login-hint"><strong>Demo Access:</strong><br>Owner: 1234 &nbsp; | &nbsp; Cashier: 5678</div>
+      </div>
+    </div>
+
+    <div id="mainApp" style="display:none;">
+      <header>
+        <h1>DukLivo <small>One App. Every Business.</small></h1>
+        <div class="topbar">
+          <div style="display:flex; align-items:center; gap:8px;">🏪 <select id="branchSelector" onchange="switchBranch()"></select></div>
+          <div class="user-info">
+            <span><strong id="currentUserName"></strong> (<span id="currentUserRole"></span>)</span>
+            <span id="serverStatus" style="font-size:12px; color:var(--text-muted);">● Check...</span>
+            <button onclick="toggleTheme()" style="background:var(--text-muted); border-radius:50%; padding:8px; width:36px; height:36px; display:flex; align-items:center; justify-content:center;" title="Toggle Theme">🌙</button>
+            <button onclick="logout()" class="btn-red">Logout</button>
+          </div>
+        </div>
+        
+        <div class="tabs-wrapper">
+          <div class="tabs">
+            <button class="tab active" data-tab="dashboard" onclick="showTab('dashboard', this)">📊 Home</button>
+            <button class="tab" data-tab="billing" onclick="showTab('billing', this)">🧾 Billing</button>
+            <button class="tab" data-tab="khata" onclick="showTab('khata', this)">📒 Khata</button>
+            <button class="tab" data-tab="stock" onclick="showTab('stock', this)">📦 Stock</button>
+            <button class="tab" data-tab="offers" onclick="showTab('offers', this)">🎁 Offers</button>
+            <button class="tab" data-tab="purchases" onclick="showTab('purchases', this)">🚚 Purchases</button>
+            <button class="tab" data-tab="reports" onclick="showTab('reports', this)">📊 Reports</button>
+            <button class="tab" data-tab="staff" onclick="showTab('staff', this)">👥 Staff</button>
+            <button class="tab" data-tab="branches" onclick="showTab('branches', this)">🏢 Branches</button>
+          </div>
+        </div>
+      </header>
+
+      <div id="dashboard" class="tab-content active app flex-col">
+        <div class="welcome-text">Welcome back, <strong><span id="dashUserName"></span></strong>! Here is your business snapshot.</div>
+        
+        <div class="stat-grid">
+          <div class="stat-box stat-sales">
+            <div class="stat-header"><div class="stat-icon">📅</div><small>Aaj ki Sales</small></div>
+            <h2>₹<span id="dashSales">0</span></h2>
+          </div>
+          <div class="stat-box stat-profit">
+            <div class="stat-header"><div class="stat-icon">💰</div><small>Aaj ka Profit</small></div>
+            <h2>₹<span id="dashProfit">0</span></h2>
+          </div>
+          <div class="stat-box stat-bills">
+            <div class="stat-header"><div class="stat-icon">🧾</div><small>Aaj ke Bills</small></div>
+            <h2><span id="dashBills">0</span></h2>
+          </div>
+          <div class="stat-box stat-due">
+            <div class="stat-header"><div class="stat-icon">📝</div><small>Total Udhaar</small></div>
+            <h2>₹<span id="dashDue">0</span></h2>
+          </div>
+          <div class="stat-box stat-stock">
+            <div class="stat-header"><div class="stat-icon">⚠️</div><small>Low Stock Items</small></div>
+            <h2><span id="dashLowStock">0</span></h2>
+          </div>
+        </div>
+
+        <div class="card" style="text-align: center;">
+          <h3>Quick Actions</h3>
+          <div style="display:flex; gap:12px; justify-content:center; margin-top:20px; flex-wrap:wrap;">
+            <button onclick="showTab('billing', document.querySelector('.tab[data-tab=billing]'))" class="btn-green">➕ New Bill</button>
+            <button onclick="showTab('stock', document.querySelector('.tab[data-tab=stock]'))" class="btn-orange">📦 Check Stock</button>
+            <button onclick="showTab('reports', document.querySelector('.tab[data-tab=reports]'))" class="btn-purple">📊 Reports</button>
+            <button onclick="downloadBackup()" class="btn-red">📥 Backup Data</button>
+            <button onclick="document.getElementById('restoreFile').click()" class="btn-blue" style="background:var(--primary);">📤 Restore Data</button>
+            <input type="file" id="restoreFile" accept=".json" style="display: none;" onchange="restoreBackup(event)">
+          </div>
+        </div>
+      </div>
+
+      <div id="billing" class="tab-content app">
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h3>🗂️ Products</h3>
+            <button onclick="startVoiceBilling()" class="btn-orange btn-sm" id="micBtn">🎤 Voice</button>
+          </div>
+          <div class="products" id="productList"></div>
+          <h3 style="margin-top:24px;">➕ Custom Item</h3>
+          <input id="cName" placeholder="Item ka naam">
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <input id="cPrice" type="number" placeholder="Selling ₹"><input id="cBuy" type="number" placeholder="Cost ₹">
+            <input id="cQty" type="number" placeholder="Qty" value="1">
+            <select id="cGst"><option value="0">No GST</option><option value="5">GST 5%</option><option value="12">GST 12%</option><option value="18">GST 18%</option></select>
+          </div>
+          <button onclick="addCustom()" style="width:100%; margin-top:12px;">+ Add to Bill</button>
+        </div>
+        <div class="card">
+          <h3>🧾 Current Bill</h3>
+          <!-- REMOVED THE TEXT FROM HERE -->
+          <div id="billList"></div>
+          <div style="margin-top:20px;">
+            <div class="summary-row"><span>Subtotal:</span><span>₹<span id="subtotal">0</span></span></div>
+            <div class="summary-row discount" id="discountRow" style="display:none; color:var(--orange);"><span>🎁 Offer:</span><span>-₹<span id="discountAmt">0</span></span></div>
+            <div class="summary-row"><span>GST:</span><span>₹<span id="gstTotal">0</span></span></div>
+            <div class="summary-row total"><span>Total:</span><span>₹<span id="grandTotal">0</span></span></div>
+          </div>
+          <div class="cust-box">
+            <h4>👤 Customer Details</h4>
+            <input id="custName" placeholder="Customer Name"><input id="custPhone" placeholder="Phone Number">
+            <h4 style="margin-top:16px;">💰 Payment Mode</h4>
+            <select id="payMode" onchange="togglePaidInput()"><option value="Cash">💵 Cash</option><option value="UPI">📱 UPI</option><option value="Card">💳 Card</option><option value="Udhaar">📝 Udhaar</option></select>
+            <input id="paidNow" type="number" class="hide" placeholder="Kitna paid?">
+            <button onclick="checkout()" class="btn-green" style="width:100%; margin-top:16px; padding:16px; font-size:16px;">✅ Checkout & Save</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="khata" class="tab-content app flex-col">
+        <div class="stat-box stat-due"><small>Total Udhaar (lena hai)</small><h2>₹<span id="totalDue">0</span></h2></div>
+        <div class="card">
+          <h3>👥 Customers</h3>
+          <input id="searchCust" class="search" placeholder="🔍 Naam ya phone se search" oninput="renderCustomers()">
+          <div id="customerList"><div class="empty">Abhi koi customer nahi</div></div>
+        </div>
+      </div>
+
+      <div id="stock" class="tab-content app flex-col">
+        <div class="stat-grid">
+          <div class="stat-box stat-stock"><small>📦 Products</small><h2><span id="totalProducts">0</span></h2></div>
+          <div class="stat-box stat-due"><small>⚠️ Low Stock</small><h2><span id="lowStockCount">0</span></h2></div>
+        </div>
+        <div class="card">
+          <h3>➕ Naya Product</h3>
+          <input id="npName" placeholder="Product Name">
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <input id="npBuy" type="number" placeholder="Cost ₹"><input id="npPrice" type="number" placeholder="Selling ₹">
+            <input id="npStock" type="number" placeholder="Stock"><input id="npMin" type="number" placeholder="Min Alert">
+          </div>
+          <select id="npGst"><option value="0">No GST</option><option value="5">GST 5%</option><option value="12">GST 12%</option><option value="18">GST 18%</option></select>
+          <button onclick="addProduct()" class="btn-green" style="width:100%; margin-top:12px;">+ Add Product</button>
+        </div>
+        <div class="card">
+          <h3>🔀 Stock Transfer</h3>
+          <div class="info-box">Samaan doosri branch bhejo.</div>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px;"><select id="tfTo"></select><select id="tfProduct"></select></div>
+          <input id="tfQty" type="number" placeholder="Qty">
+          <button onclick="transferStock()" class="btn-orange" style="width:100%;">🔀 Transfer</button>
+        </div>
+        <div class="card">
+          <h3>📦 Products List</h3>
+          <input id="searchProd" class="search" placeholder="🔍 Search" oninput="renderStock()">
+          <div id="productStockList"><div class="empty">Abhi koi product nahi</div></div>
+        </div>
+      </div>
+
+      <div id="offers" class="tab-content app flex-col">
+        <div class="card">
+          <h3>🎁 Create Offer</h3>
+          <select id="oType" onchange="toggleOfferForm()"><option value="product">📦 Product Discount</option><option value="cart">🛒 Cart Discount</option></select>
+          <div id="offerProductSection"><select id="oProduct"></select></div>
+          <div id="offerCartSection" class="hide"><input id="oMinAmount" type="number" placeholder="Min Purchase ₹"></div>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <select id="oMode"><option value="percent">% Off</option><option value="flat">₹ Off</option></select>
+            <input id="oValue" type="number" placeholder="Value">
+          </div>
+          <button onclick="addOffer()" class="btn-green" style="width:100%; margin-top:12px;">+ Create Offer</button>
+        </div>
+        <div class="card"><h3>🎁 Active Offers</h3><div id="offerList"><div class="empty">Abhi koi offer nahi</div></div></div>
+      </div>
+
+      <div id="purchases" class="tab-content app flex-col">
+        <div class="card">
+          <h3>🚚 New Purchase</h3>
+          <select id="purSupplier"></select>
+          <div style="display:flex; gap:12px; margin-top:8px;">
+            <input id="newSupName" placeholder="New Supplier" style="flex:1;"><input id="newSupPhone" placeholder="Phone" style="flex:1;">
+            <button class="btn-orange btn-sm" onclick="addSupplier()">+</button>
+          </div>
+          <div id="purchaseItems" style="margin-top:16px;"><div class="empty">No items added</div></div>
+          <div style="display:flex; gap:8px; margin-top:12px;">
+            <select id="purProd" style="flex:2;"><option value="">-- Product --</option></select>
+            <input id="purQty" type="number" placeholder="Qty" style="flex:1;"><input id="purPrice" type="number" placeholder="Buy ₹" style="flex:1;">
+            <button class="btn-sm" onclick="addPurchaseItem()">+</button>
+          </div>
+          <div class="summary-row" style="margin-top:20px; font-weight:600; color:var(--text);"><span>Total:</span><span>₹<span id="purTotal">0</span></span></div>
+          <input id="purPaid" type="number" placeholder="Paid amount (blank = full)">
+          <button onclick="savePurchase()" class="btn-green" style="width:100%; margin-top:12px;">✅ Save Purchase</button>
+        </div>
+        <div class="card"><h3>👥 Suppliers</h3><div id="supplierList"><div class="empty">No suppliers</div></div></div>
+        <div class="card"><h3>📜 History</h3><div id="purchaseHistory"><div class="empty">No purchases</div></div></div>
+      </div>
+
+      <div id="reports" class="tab-content app flex-col">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+          <div class="view-toggle" style="margin-bottom:0; display:flex; gap:12px;">
+            <button id="btnThisBranch" class="tab active" style="padding:10px 20px; box-shadow:var(--shadow); border:1px solid var(--border);" onclick="setReportScope('this')">📊 This Branch</button>
+            <button id="btnAllBranches" class="tab" style="padding:10px 20px;" onclick="setReportScope('all')">🌐 All Branches</button>
+          </div>
+          <button onclick="exportCSV()" class="btn-green" style="font-size:14px;">📥 Export CSV</button>
+        </div>
+        <div class="stat-grid">
+          <div class="stat-box stat-sales"><small>📅 Today Sales</small><h2>₹<span id="todaySales">0</span></h2></div>
+          <div class="stat-box stat-bills"><small>🧾 Today Bills</small><h2><span id="todayBills">0</span></h2></div>
+          <div class="stat-box stat-profit"><small>💰 Today Profit</small><h2>₹<span id="todayProfit">0</span></h2></div>
+          <div class="stat-box stat-due"><small>📝 Total Due</small><h2>₹<span id="totalDueReport">0</span></h2></div>
+        </div>
+        <div class="card"><h3>📈 7 Days Chart</h3><div class="chart-container"><canvas id="salesChart"></canvas></div></div>
+        <div class="card"><h3>🏆 Top Products</h3><div id="topProducts"><div class="empty">No sales yet</div></div></div>
+        <div class="card"><h3>📚 Recent Bills</h3><div id="recentBills"><div class="empty">No bills yet</div></div></div>
+      </div>
+
+      <div id="staff" class="tab-content app flex-col">
+        <div class="card">
+          <h3>➕ Add Staff</h3>
+          <input id="stName" placeholder="Name"><input id="stPhone" placeholder="Phone">
+          <select id="stRole"><option value="cashier">Cashier</option><option value="stockman">Stock Manager</option><option value="manager">Manager</option><option value="owner">Owner</option></select>
+          <input id="stPin" type="password" maxlength="4" placeholder="4-digit PIN">
+          <button onclick="addStaff()" class="btn-green" style="width:100%; margin-top:12px;">+ Add Staff</button>
+        </div>
+        <div class="card"><h3>👥 Staff List</h3><div id="staffList"><div class="empty">No staff</div></div></div>
+        <div class="card"><h3>🕵️ Activity Log</h3><div id="activityList"><div class="empty">No activity</div></div></div>
+      </div>
+
+      <div id="branches" class="tab-content app flex-col">
+        <div class="card">
+          <h3>➕ Add Branch</h3>
+          <input id="brName" placeholder="Branch Name"><input id="brAddress" placeholder="Address">
+          <button onclick="addBranch()" class="btn-green" style="width:100%; margin-top:12px;">+ Add Branch</button>
+        </div>
+        <div class="card"><h3>🏢 Branches</h3><div id="branchList"><div class="empty">No branches</div></div></div>
+      </div>
+
+    </div>
+
+    <div class="modal-bg" id="modalBg" onclick="if(event.target===this) closeModal()">
+      <div class="modal" id="modalContent"></div>
+    </div>
+  </div>
+
+  <script>
+    // ============ 3D EARTH SETUP ============
+    const canvas = document.getElementById('earth-canvas');
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.1));
+    const sunLight = new THREE.DirectionalLight(0xffffff, 1.5);
+    sunLight.position.set(5, 3, 5);
+    scene.add(sunLight);
+
+    const loader = new THREE.TextureLoader();
+    const earthGeo = new THREE.SphereGeometry(5, 64, 64);
+    const earthMat = new THREE.MeshStandardMaterial({
+        map: loader.load('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg'),
+        emissiveMap: loader.load('https://unpkg.com/three-globe/example/img/earth-night.jpg'),
+        emissive: new THREE.Color(0xffffff),
+        emissiveIntensity: 1.2,
+        bumpMap: loader.load('https://unpkg.com/three-globe/example/img/earth-topology.png'),
+        bumpScale: 0.05,
+        roughnessMap: loader.load('https://unpkg.com/three-globe/example/img/earth-water.png'),
+        roughness: 0.8
+    });
+    const earth = new THREE.Mesh(earthGeo, earthMat);
+    earth.position.set(0, 0, 0); 
+    scene.add(earth);
+
+    const cloudGeo = new THREE.SphereGeometry(5.05, 64, 64);
+    const cloudMat = new THREE.MeshStandardMaterial({
+        map: loader.load('https://unpkg.com/three-globe/example/img/earth-clouds.png'),
+        transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending
+    });
+    const clouds = new THREE.Mesh(cloudGeo, cloudMat);
+    clouds.position.set(0, 0, 0);
+    scene.add(clouds);
+
+    const atmoMat = new THREE.ShaderMaterial({
+        vertexShader: `varying vec3 vNormal; void main() { vNormal = normalize(normalMatrix * normal); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+        fragmentShader: `varying vec3 vNormal; void main() { float intensity = pow(0.7 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 3.0); gl_FragColor = vec4(0.3, 0.6, 1.0, 1.0) * intensity; }`,
+        blending: THREE.AdditiveBlending, side: THREE.BackSide, transparent: true
+    });
+    const atmosphere = new THREE.Mesh(new THREE.SphereGeometry(5.2, 64, 64), atmoMat);
+    atmosphere.position.set(0, 0, 0);
+    scene.add(atmosphere);
+
+    camera.position.z = 12.5;
+
+    function animate() {
+        requestAnimationFrame(animate);
+        earth.rotation.y += 0.0006;
+        clouds.rotation.y += 0.0008;
+        atmosphere.rotation.y += 0.0006;
+        earth.rotation.x = 0.37; clouds.rotation.x = 0.37; atmosphere.rotation.x = 0.37;
+        renderer.render(scene, camera);
+    }
+    animate();
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // ============ APP LOGIC ============
+    const DEVICE_NAME = 'Web';
+    const ROLE_PERMS = { owner: ['dashboard','billing','khata','stock','offers','purchases','reports','staff','branches'], manager: ['dashboard','billing','khata','stock','offers','purchases','reports'], cashier: ['dashboard','billing','khata'], stockman: ['dashboard','billing','stock','purchases'] };
+    let session = null, staff = [], branches = [], products = [], customers = [], bills = [], currentBill = [], suppliers = [], purchases = [], offers = [], purchaseCart = [], activities = [];
+    let reportScope = 'this', salesChartInstance = null;
+
+    if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js').catch(() => {}); }
+
+    function loadAll() {
+      branches = JSON.parse(localStorage.getItem("dl_branches")) || seedBranches();
+      staff = JSON.parse(localStorage.getItem("dl_staff")) || seedStaff();
+      products = JSON.parse(localStorage.getItem("dl_products")) || seedProducts();
+      customers = JSON.parse(localStorage.getItem("dl_customers")) || [];
+      bills = JSON.parse(localStorage.getItem("dl_bills")) || [];
+      currentBill = JSON.parse(localStorage.getItem("dl_bill")) || [];
+      suppliers = JSON.parse(localStorage.getItem("dl_suppliers")) || [];
+      purchases = JSON.parse(localStorage.getItem("dl_purchases")) || [];
+      offers = JSON.parse(localStorage.getItem("dl_offers")) || [];
+      activities = JSON.parse(localStorage.getItem("dl_activities")) || [];
+      session = JSON.parse(localStorage.getItem("dl_session")) || null;
+      products = products.map(p => { if (!p.stocks) { p.stocks = { "BR1": p.stock || 0 }; delete p.stock; } return p; });
+      bills = bills.map(b => { if (!b.branchId) b.branchId = "BR1"; if (!b.staffId) b.staffId = "S1"; if (!b.staffName) b.staffName = "Rahul"; return b; });
+    }
+    
+    function saveAll() {
+      localStorage.setItem("dl_branches", JSON.stringify(branches)); localStorage.setItem("dl_staff", JSON.stringify(staff));
+      localStorage.setItem("dl_products", JSON.stringify(products)); localStorage.setItem("dl_customers", JSON.stringify(customers));
+      localStorage.setItem("dl_bills", JSON.stringify(bills)); localStorage.setItem("dl_bill", JSON.stringify(currentBill));
+      localStorage.setItem("dl_suppliers", JSON.stringify(suppliers)); localStorage.setItem("dl_purchases", JSON.stringify(purchases));
+      localStorage.setItem("dl_offers", JSON.stringify(offers)); localStorage.setItem("dl_activities", JSON.stringify(activities));
+      localStorage.setItem("dl_session", JSON.stringify(session)); syncToServer();
+    }
+    
+    function seedBranches() { return [ { id: "BR1", name: "Main Store", address: "MG Road" }, { id: "BR2", name: "Branch 2", address: "Karol Bagh" } ]; }
+    function seedStaff() { return [ { id: "S1", name: "Rahul", phone: "9999999999", role: "owner", pin: "1234", active: true }, { id: "S2", name: "Priya", phone: "8888888888", role: "cashier", pin: "5678", active: true } ]; }
+    function seedProducts() { return [ { id: "P1", name: "Aata 5kg", price: 250, buy: 210, gst: 5, stocks: { BR1: 20, BR2: 10 }, minStock: 5 }, { id: "P2", name: "Tel 1L", price: 180, buy: 150, gst: 5, stocks: { BR1: 15, BR2: 8 }, minStock: 3 }, { id: "P3", name: "Chawal 1kg", price: 60, buy: 50, gst: 5, stocks: { BR1: 12, BR2: 6 }, minStock: 4 }, { id: "P4", name: "Cheeni 1kg", price: 45, buy: 38, gst: 5, stocks: { BR1: 10, BR2: 5 }, minStock: 3 }, { id: "P5", name: "Doodh 500ml", price: 30, buy: 25, gst: 0, stocks: { BR1: 8, BR2: 4 }, minStock: 5 }, { id: "P6", name: "Biscuit", price: 20, buy: 15, gst: 18, stocks: { BR1: 2, BR2: 1 }, minStock: 5 }, { id: "P7", name: "Shampoo", price: 120, buy: 95, gst: 18, stocks: { BR1: 6, BR2: 3 }, minStock: 3 }, { id: "P8", name: "Sabun", price: 40, buy: 30, gst: 18, stocks: { BR1: 1, BR2: 2 }, minStock: 5 } ]; }
+    function nextId(prefix, list) { let n = 1; list.forEach(x => { const m = Number(String(x.id).replace(prefix, "")); if (!isNaN(m) && m >= n) n = m + 1; }); return prefix + n; }
+    
+    function currentUser() { return session ? staff.find(s => s.id === session.staffId) : null; }
+    function currentBranchId() { return session ? session.branchId : null; }
+    function currentBranch() { return branches.find(b => b.id === currentBranchId()); }
+    function branchStock(p) { return (p.stocks && p.stocks[currentBranchId()]) || 0; }
+    function canSeeProfit() { const u = currentUser(); return u && (u.role === "owner" || u.role === "manager"); }
+    function hasPerm(tab) { const u = currentUser(); return u && (ROLE_PERMS[u.role] || []).includes(tab); }
+    
+    function logActivity(action, detail) { activities.push({ id: nextId("A", activities), timestamp: Date.now(), staffId: session ? session.staffId : null, staffName: currentUser() ? currentUser().name : "System", branchId: session ? session.branchId : null, action, detail }); if (activities.length > 200) activities = activities.slice(-200); }
+    function toggleTheme() { document.body.classList.toggle('light-mode'); localStorage.setItem("dl_theme", document.body.classList.contains('light-mode') ? "light" : "dark"); if(salesChartInstance) renderReports(); }
+    if (localStorage.getItem("dl_theme") === "light") document.body.classList.add('light-mode');
+
+    function startVoiceBilling() {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) return alert("Browser voice billing support nahi karta.");
+      const rec = new SR(); rec.lang = 'hi-IN'; rec.interimResults = false;
+      const btn = document.getElementById("micBtn"); btn.innerHTML = "🔴 Listening...";
+      rec.onresult = (event) => {
+        const text = event.results[0][0].transcript.toLowerCase(); btn.innerHTML = "🎤 Voice";
+        const p = products.find(x => text.includes(x.name.toLowerCase().split(' ')[0]));
+        if (p) { addItem(p.id, 1); alert(`✅ "${p.name}" added!`); } else { alert(`❌ Samajh nahi aaya: "${text}"`); }
+      };
+      rec.onerror = () => { btn.innerHTML = "🎤 Voice"; alert("Error. Try again."); };
+      rec.onend = () => { btn.innerHTML = "🎤 Voice"; };
+      rec.start();
+    }
+
+    function login() {
+      const pin = document.getElementById("loginPin").value.trim();
+      const user = staff.find(s => s.pin === pin && s.active);
+      if (!user) return alert("❌ Galat PIN!");
+      session = { staffId: user.id, branchId: branches[0].id };
+      saveAll(); logActivity("Login", `${user.name} logged in`);
+      document.getElementById("loginPin").value = ""; startApp();
+    }
+    function logout() {
+      if (!confirm("Logout?")) return;
+      logActivity("Logout", `${currentUser().name} logged out`); session = null; saveAll();
+      document.getElementById("mainApp").style.display = "none"; document.getElementById("loginScreen").style.display = "flex";
+    }
+    function startApp() {
+      const u = currentUser(); if (!u) return;
+      document.getElementById("loginScreen").style.display = "none"; document.getElementById("mainApp").style.display = "block";
+      document.getElementById("currentUserName").innerText = u.name; document.getElementById("currentUserRole").innerText = u.role;
+      document.getElementById("branchSelector").innerHTML = branches.map(b => `<option value="${b.id}" ${b.id === session.branchId ? 'selected' : ''}>${b.name}</option>`).join("");
+      document.querySelectorAll(".tab").forEach(t => { t.classList.toggle("hide-perm", !hasPerm(t.dataset.tab)); });
+      const firstTab = (ROLE_PERMS[u.role] || [])[0] || "dashboard";
+      const tabBtn = document.querySelector(`.tab[data-tab="${firstTab}"]`); if (tabBtn) showTab(firstTab, tabBtn);
+      refreshAll();
+    }
+    function switchBranch() { session.branchId = document.getElementById("branchSelector").value; saveAll(); logActivity("Branch Switch", `Now at ${currentBranch().name}`); refreshAll(); }
+    function refreshAll() { buildProductButtons(); renderBill(); renderCustomers(); renderStock(); renderOffers(); renderPurchases(); renderReports(); renderStaff(); renderBranches(); renderActivity(); renderDashboard(); }
+    
+    function showTab(id, btn) {
+      if (!hasPerm(id)) return alert("❌ No access!");
+      document.querySelectorAll(".tab-content").forEach(t => t.classList.remove("active")); document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+      document.getElementById(id).classList.add("active"); btn.classList.add("active");
+      if (id === "dashboard") renderDashboard(); if (id === "billing") renderBill(); if (id === "khata") renderCustomers(); if (id === "stock") renderStock();
+      if (id === "offers") renderOffers(); if (id === "purchases") renderPurchases(); if (id === "reports") renderReports();
+      if (id === "staff") { renderStaff(); renderActivity(); } if (id === "branches") renderBranches();
+    }
+    
+    function renderDashboard() {
+      const now = Date.now(); const todayBills = bills.filter(b => b.branchId === currentBranchId() && isSameDay(b.timestamp, now));
+      document.getElementById("dashUserName").innerText = currentUser().name;
+      document.getElementById("dashSales").innerText = todayBills.reduce((s, b) => s + b.total, 0).toFixed(2);
+      document.getElementById("dashProfit").innerText = todayBills.reduce((s, b) => s + (b.profit || 0), 0).toFixed(2);
+      document.getElementById("dashBills").innerText = todayBills.length;
+      document.getElementById("dashDue").innerText = customers.reduce((s, c) => s + c.due, 0).toFixed(2);
+      document.getElementById("dashLowStock").innerText = products.filter(p => branchStock(p) <= p.minStock).length;
+    }
+
+    function getEffectivePrice(item) { const offer = offers.find(o => o.active && o.type === "product" && o.productId === item.productId); if (!offer) return item.price; return offer.mode === "percent" ? Math.max(0, item.price * (1 - offer.value / 100)) : Math.max(0, item.price - offer.value); }
+    function getCartDiscount(subtotal) { let best = 0; offers.filter(o => o.active && o.type === "cart" && subtotal >= o.minAmount).forEach(o => { const d = o.mode === "percent" ? subtotal * o.value / 100 : o.value; if (d > best) best = d; }); return best; }
+    
+    function buildProductButtons() {
+      const div = document.getElementById("productList"); if (!div) return; div.innerHTML = "";
+      products.forEach(p => {
+        const stock = branchStock(p), low = stock <= p.minStock, out = stock <= 0;
+        const btn = document.createElement("button"); btn.className = "product-btn"; btn.disabled = out;
+        btn.innerHTML = `${p.name}<span class="stock-badge ${low ? 'low' : ''}">${out ? 'OUT' : stock}</span><small>₹${p.price} · GST ${p.gst}%</small>`;
+        if (!out) btn.onclick = () => addItem(p.id, 1); div.appendChild(btn);
+      });
+    }
+    function addItem(productId, qty) {
+      const p = products.find(x => x.id === productId); if (!p) return;
+      const existing = currentBill.find(b => b.productId === productId), currentQty = existing ? existing.qty : 0;
+      if (branchStock(p) < currentQty + qty) return alert(`Sirf ${branchStock(p)} stock bacha hai!`);
+      if (existing) existing.qty += qty; else currentBill.push({ productId: p.id, name: p.name, price: p.price, buy: p.buy, qty: qty, gst: p.gst });
+      saveAll(); renderBill();
+    }
+    function addCustom() {
+      const name = document.getElementById("cName").value.trim(), price = Number(document.getElementById("cPrice").value);
+      const buy = Number(document.getElementById("cBuy").value) || 0, qty = Number(document.getElementById("cQty").value) || 1, gst = Number(document.getElementById("cGst").value);
+      if (!name || !price) return alert("Naam aur price bharo!");
+      const existing = currentBill.find(b => b.name === name && b.gst === gst && b.price === price);
+      if (existing) existing.qty += qty; else currentBill.push({ productId: null, name, price, buy, qty, gst });
+      document.getElementById("cName").value = ""; document.getElementById("cPrice").value = ""; document.getElementById("cBuy").value = ""; document.getElementById("cQty").value = "1"; saveAll(); renderBill();
+    }
+    function removeItem(i) { currentBill.splice(i, 1); saveAll(); renderBill(); }
+    
+    function renderBill() {
+      const list = document.getElementById("billList"); if (!list) return;
+      if (currentBill.length === 0) list.innerHTML = ``; // Text removed here
+      else {
+        list.innerHTML = "";
+        currentBill.forEach((item, i) => {
+          const eff = getEffectivePrice(item), base = eff * item.qty, gstAmt = base * item.gst / 100, hasOffer = eff < item.price;
+          const div = document.createElement("div"); div.className = "bill-item";
+          div.innerHTML = `<div><strong>${item.name}</strong><small>${hasOffer ? `<span style="text-decoration:line-through; color:#999;">₹${item.price}</span> <span style="color:var(--orange);">₹${eff.toFixed(2)}</span>` : `₹${item.price}`} × ${item.qty}</small></div><div style="display:flex; gap:12px; align-items:center;"><span style="font-weight:600;">₹${(base + gstAmt).toFixed(2)}</span><button class="btn-red" onclick="removeItem(${i})">✕</button></div>`;
+          list.appendChild(div);
+        });
+      }
+      let subtotal = 0, gstTotal = 0;
+      currentBill.forEach(it => { const eff = getEffectivePrice(it); subtotal += eff * it.qty; gstTotal += eff * it.qty * it.gst / 100; });
+      const cartDisc = getCartDiscount(subtotal), finalSubtotal = subtotal - cartDisc;
+      document.getElementById("subtotal").innerText = subtotal.toFixed(2); document.getElementById("gstTotal").innerText = gstTotal.toFixed(2);
+      if (cartDisc > 0) { document.getElementById("discountRow").style.display = "flex"; document.getElementById("discountAmt").innerText = cartDisc.toFixed(2); } else document.getElementById("discountRow").style.display = "none";
+      document.getElementById("grandTotal").innerText = (finalSubtotal + gstTotal).toFixed(2);
+    }
+    function togglePaidInput() { const mode = document.getElementById("payMode").value; document.getElementById("paidNow").classList.toggle("hide", mode !== "Udhaar"); if (mode !== "Udhaar") document.getElementById("paidNow").value = ""; }
+    
+    function checkout() {
+      if (currentBill.length === 0) return alert("Bill khali hai!");
+      const custName = document.getElementById("custName").value.trim(), custPhone = document.getElementById("custPhone").value.trim();
+      const mode = document.getElementById("payMode").value, paidNow = Number(document.getElementById("paidNow").value) || 0;
+      let subtotal = 0, gstTotal = 0, costTotal = 0;
+      currentBill.forEach(it => { const eff = getEffectivePrice(it); subtotal += eff * it.qty; gstTotal += eff * it.qty * it.gst / 100; costTotal += (it.buy || 0) * it.qty; });
+      const cartDisc = getCartDiscount(subtotal), finalSubtotal = subtotal - cartDisc, total = finalSubtotal + gstTotal, profit = finalSubtotal - costTotal;
+      let paid = total, due = 0;
+      if (mode === "Udhaar") { if (!custPhone) return alert("Udhaar ke liye phone zaroori!"); paid = Math.min(paidNow, total); due = total - paid; }
+      let customer = null;
+      if (custPhone) {
+        customer = customers.find(c => c.phone === custPhone);
+        if (!customer) { customer = { id: nextId("CUST-", customers), name: custName || "Customer", phone: custPhone, due: 0, bills: [], payments: [], loyalty: 0 }; customers.push(customer); }
+        else if (custName) customer.name = custName;
+      }
+      const pointsEarned = Math.floor(total / 100); if (customer) customer.loyalty = (customer.loyalty || 0) + pointsEarned;
+      currentBill.forEach(it => { if (it.productId) { const p = products.find(x => x.id === it.productId); if (p) p.stocks[currentBranchId()] = Math.max(0, (p.stocks[currentBranchId()] || 0) - it.qty); } });
+      const u = currentUser();
+      const bill = { id: nextId("BILL-", bills), timestamp: Date.now(), date: new Date().toLocaleString("en-IN"), branchId: currentBranchId(), staffId: u.id, staffName: u.name, customerId: customer ? customer.id : null, customerName: customer ? customer.name : "Walk-in", items: currentBill.map(i => ({...i, effectivePrice: getEffectivePrice(i)})), subtotal, cartDiscount: cartDisc, gstTotal, costTotal, total, profit, paid, due, mode, pointsEarned };
+      bills.push(bill);
+      if (customer) { customer.bills.push(bill.id); customer.due += due; if (paid > 0) customer.payments.push({ amount: paid, date: bill.date, mode }); }
+      logActivity("Bill Created", `${bill.id} · ₹${total.toFixed(0)}`); currentBill = [];
+      document.getElementById("custName").value = ""; document.getElementById("custPhone").value = ""; document.getElementById("payMode").value = "Cash"; document.getElementById("paidNow").value = ""; togglePaidInput();
+      saveAll(); renderBill(); buildProductButtons(); viewBill(bill.id);
+    }
+    
+    function viewCustomerHistory(customerId) {
+      const c = customers.find(x => x.id === customerId); if (!c) return;
+      const cBills = bills.filter(b => b.customerId === customerId).sort((a, b) => b.timestamp - a.timestamp);
+      let html = `<h2 style="text-align:center; margin-bottom:8px;">${c.name}</h2><div class="meta" style="text-align:center; color:var(--text-muted); font-size:14px; margin-bottom:20px;">📱 ${c.phone} · Bills: ${cBills.length}</div><hr style="border:none; border-top:1px solid var(--border); margin-bottom:15px;">`;
+      if (cBills.length === 0) html += `<div class="empty">No history</div>`;
+      else { cBills.forEach(b => { const items = b.items.map(i => i.name).join(', '); html += `<div style="padding:15px 0; border-bottom:1px solid var(--border); font-size:14px;"><div style="display:flex; justify-content:space-between;"><strong>${b.date.split(',')[0]}</strong><span style="font-weight:600;">₹${b.total.toFixed(2)}</span></div><div style="color:var(--text-muted); font-size:13px; margin-top:6px;">${items}</div></div>`; }); }
+      html += `<button onclick="closeModal()" style="width:100%; margin-top:25px;" class="btn-red">Close</button>`;
+      document.getElementById("modalContent").innerHTML = html; document.getElementById("modalBg").classList.add("show");
+    }
+
+    function renderCustomers() {
+      document.getElementById("totalDue").innerText = customers.reduce((s, c) => s + c.due, 0).toFixed(2);
+      const search = (document.getElementById("searchCust").value || "").toLowerCase();
+      const list = document.getElementById("customerList"), filtered = customers.filter(c => c.name.toLowerCase().includes(search) || c.phone.includes(search));
+      if (filtered.length === 0) return list.innerHTML = `<div class="empty">Koi customer nahi mila</div>`;
+      list.innerHTML = "";
+      filtered.forEach(c => {
+        const row = document.createElement("div"); row.className = "customer-row";
+        const badge = c.due > 0 ? `<span class="due-badge pending">₹${c.due.toFixed(2)} due</span>` : `<span class="due-badge clear">✓ Clear</span>`;
+        const waBtn = `<button class="btn-sm btn-green" onclick="sendWhatsApp('${c.id}', '${c.due > 0 ? 'due' : 'loyalty'}')">💬 WA</button>`;
+        const histBtn = `<button class="btn-sm btn-purple" onclick="viewCustomerHistory('${c.id}')">📜 Hist</button>`;
+        const payBtn = c.due > 0 ? `<button class="btn-sm btn-orange" onclick="receivePayment('${c.id}')">💵 Pay</button>` : "";
+        row.innerHTML = `<div style="flex:1;"><strong>${c.name} <span style="font-size:12px; color:var(--orange);">(${c.loyalty || 0} pts)</span></strong><small style="color:var(--text-muted); font-size:13px;">📱 ${c.phone}</small></div><div style="display:flex; gap:8px; flex-wrap:wrap;">${badge}${histBtn}${waBtn}${payBtn}</div>`;
+        list.appendChild(row);
+      });
+    }
+    function receivePayment(customerId) {
+      const c = customers.find(x => x.id === customerId); if (!c || c.due <= 0) return;
+      const amt = Number(prompt(`${c.name} ka pending: ₹${c.due}\nKitna payment mila?`, c.due));
+      if (!amt || amt <= 0 || amt > c.due) return alert("Sahi amount daalo!");
+      c.due -= amt; c.payments.push({ amount: amt, date: new Date().toLocaleString("en-IN"), mode: "Cash" });
+      logActivity("Payment Received", `${c.name} · ₹${amt}`); saveAll(); renderCustomers();
+    }
+    function sendWhatsApp(customerId, type) {
+      const c = customers.find(x => x.id === customerId);
+      if (!c || !c.phone) return alert("Customer ka phone number nahi hai!");
+      let msg = type === 'due' ? `Namaste ${c.name} ji,\nAapka DukLivo (${currentBranch().name}) par ₹${c.due} udhaar baaki hai.\nKripya jaldi payment karein. Dhanyawad!` : `Namaste ${c.name} ji,\nDukLivo (${currentBranch().name}) par aapke ${c.loyalty || 0} loyalty points hain!\nDhanyawad!`;
+      const phone = c.phone.replace(/\D/g, ''), formattedPhone = phone.length === 10 ? '91' + phone : phone;
+      window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+    }
+
+    function exportCSV() {
+      if (bills.length === 0) return alert("Export karne ke liye koi bill nahi hai!");
+      let csv = "Bill ID,Date,Customer,Mode,Total,Profit,Status\n";
+      bills.forEach(b => { csv += `"${b.id}","${b.date}","${b.customerName}","${b.mode}",${b.total},${b.profit || 0},"${b.due > 0 ? `Due ₹${b.due}` : "Paid"}"\n`; });
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' }); const link = document.createElement("a");
+      link.setAttribute("href", URL.createObjectURL(blob)); link.setAttribute("download", `DukLivo_Bills_${new Date().toLocaleDateString()}.csv`);
+      document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    }
+    
+    function downloadBackup() { window.location.href = '/api/backup'; }
+
+    function restoreBackup(event) {
+      const file = event.target.files[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const data = JSON.parse(e.target.result);
+          if (!data.products || !data.customers) return alert("❌ Invalid backup file format!");
+          if (!confirm("⚠️ Warning: Ye purana data delete karke naya data load karega. Aapko pakka karna hai?")) return;
+          branches = data.branches || []; staff = data.staff || []; products = data.products || []; customers = data.customers || [];
+          bills = data.bills || []; suppliers = data.suppliers || []; purchases = data.purchases || []; offers = data.offers || []; activities = data.activities || [];
+          saveAll(); alert("✅ Backup restored successfully!"); window.location.reload();
+        } catch (err) { alert("❌ Error reading file: " + err.message); }
+      };
+      reader.readAsText(file);
+    }
+
+    function renderStock() {
+      document.getElementById("totalProducts").innerText = products.length; document.getElementById("lowStockCount").innerText = products.filter(p => branchStock(p) <= p.minStock).length;
+      const tfTo = document.getElementById("tfTo"); if(tfTo) tfTo.innerHTML = branches.filter(b => b.id !== currentBranchId()).map(b => `<option value="${b.id}">${b.name}</option>`).join("");
+      const tfProd = document.getElementById("tfProduct"); if(tfProd) tfProd.innerHTML = products.map(p => `<option value="${p.id}">${p.name} (${branchStock(p)})</option>`).join("");
+      const search = (document.getElementById("searchProd").value || "").toLowerCase(), list = document.getElementById("productStockList"), filtered = products.filter(p => p.name.toLowerCase().includes(search));
+      if (filtered.length === 0) return list.innerHTML = `<div class="empty">Koi product nahi</div>`;
+      list.innerHTML = "";
+      filtered.forEach(p => {
+        const stock = branchStock(p), low = stock <= p.minStock;
+        const row = document.createElement("div"); row.className = "product-row";
+        row.innerHTML = `<div style="flex:1;"><strong>${p.name}</strong><small style="color:var(--text-muted); font-size:13px;">Buy ₹${p.buy} · Sell ₹${p.price}</small></div><div style="display:flex; align-items:center; gap:10px;"><button class="btn-sm btn-red" onclick="adjustStock('${p.id}', -1)">−</button><span class="status-badge ${low ? 'low' : 'active'}" style="min-width:40px; text-align:center;">${stock}</span><button class="btn-sm btn-green" onclick="adjustStock('${p.id}', 1)">+</button><button class="btn-sm" onclick="editProduct('${p.id}')">✏️</button></div>`;
+        list.appendChild(row);
+      });
+    }
+    function adjustStock(id, delta) { const p = products.find(x => x.id === id); if (!p) return; p.stocks[currentBranchId()] = Math.max(0, (p.stocks[currentBranchId()] || 0) + delta); saveAll(); renderStock(); buildProductButtons(); }
+    function addProduct() {
+      const name = document.getElementById("npName").value.trim(), buy = Number(document.getElementById("npBuy").value) || 0, price = Number(document.getElementById("npPrice").value);
+      const stock = Number(document.getElementById("npStock").value) || 0, min = Number(document.getElementById("npMin").value) || 0, gst = Number(document.getElementById("npGst").value);
+      if (!name || !price) return alert("Naam aur selling price zaroori!");
+      products.push({ id: nextId("P", products), name, buy, price, gst, stocks: { [currentBranchId()]: stock }, minStock: min });
+      document.getElementById("npName").value = ""; document.getElementById("npBuy").value = ""; document.getElementById("npPrice").value = ""; document.getElementById("npStock").value = ""; document.getElementById("npMin").value = "";
+      logActivity("Product Added", name); saveAll(); renderStock(); buildProductButtons();
+    }
+    function editProduct(id) {
+      const p = products.find(x => x.id === id); if (!p) return;
+      const name = prompt("Product name:", p.name); if (name === null) return;
+      const price = Number(prompt("Selling price:", p.price)), buy = Number(prompt("Cost price:", p.buy)), min = Number(prompt("Min alert:", p.minStock));
+      if (name) p.name = name; if (!isNaN(price)) p.price = price; if (!isNaN(buy)) p.buy = buy; if (!isNaN(min)) p.minStock = min;
+      saveAll(); renderStock(); buildProductButtons();
+    }
+    function transferStock() {
+      const toBranch = document.getElementById("tfTo").value, productId = document.getElementById("tfProduct").value, qty = Number(document.getElementById("tfQty").value);
+      if (!toBranch || !productId || !qty || qty <= 0) return alert("Sab fields bharo!");
+      const p = products.find(x => x.id === productId), fromStock = p.stocks[currentBranchId()] || 0;
+      if (fromStock < qty) return alert(`Sirf ${fromStock} stock hai!`);
+      p.stocks[currentBranchId()] = fromStock - qty; p.stocks[toBranch] = (p.stocks[toBranch] || 0) + qty;
+      logActivity("Stock Transfer", `${p.name} × ${qty}`); document.getElementById("tfQty").value = ""; saveAll(); renderStock(); buildProductButtons();
+    }
+
+    function toggleOfferForm() { const type = document.getElementById("oType").value; document.getElementById("offerProductSection").classList.toggle("hide", type !== "product"); document.getElementById("offerCartSection").classList.toggle("hide", type !== "cart"); }
+    function populateOfferProductSelect() { const sel = document.getElementById("oProduct"); if(sel) sel.innerHTML = products.map(p => `<option value="${p.id}">${p.name}</option>`).join(""); }
+    function addOffer() {
+      const type = document.getElementById("oType").value, mode = document.getElementById("oMode").value, value = Number(document.getElementById("oValue").value);
+      if (!value || value <= 0) return alert("Discount value daalo!");
+      const offer = { id: nextId("O", offers), type, mode, value, active: true };
+      if (type === "product") { offer.productId = document.getElementById("oProduct").value; if (!offer.productId) return alert("Product select karo!"); }
+      else offer.minAmount = Number(document.getElementById("oMinAmount").value) || 0;
+      offers.push(offer); document.getElementById("oValue").value = ""; document.getElementById("oMinAmount").value = ""; saveAll(); renderOffers(); renderBill();
+    }
+    function renderOffers() {
+      populateOfferProductSelect(); const list = document.getElementById("offerList"); if (!list) return;
+      if (offers.length === 0) return list.innerHTML = `<div class="empty">Abhi koi offer nahi</div>`;
+      list.innerHTML = "";
+      offers.forEach(o => {
+        const row = document.createElement("div"); row.className = "offer-row";
+        let desc = o.type === "product" ? `📦 ${products.find(x => x.id === o.productId)?.name || 'Deleted'} → ${o.mode === "percent" ? o.value + '%' : '₹' + o.value} off` : `🛒 Cart ≥ ₹${o.minAmount} → ${o.mode === "percent" ? o.value + '%' : '₹' + o.value} off`;
+        row.innerHTML = `<div style="flex:1;"><strong>${desc}</strong><small style="color:${o.active?'var(--green)':'var(--text-muted)'};">${o.active ? "Active" : "Paused"}</small></div><div style="display:flex; gap:8px;"><button class="btn-sm ${o.active ? 'btn-orange' : 'btn-green'}" onclick="toggleOffer('${o.id}')">${o.active ? 'Pause' : 'Resume'}</button><button class="btn-sm btn-red" onclick="deleteOffer('${o.id}')">🗑️</button></div>`;
+        list.appendChild(row);
+      });
+    }
+    function toggleOffer(id) { const o = offers.find(x => x.id === id); if (o) o.active = !o.active; saveAll(); renderOffers(); renderBill(); }
+    function deleteOffer(id) { if (confirm("Delete?")) { offers = offers.filter(x => x.id !== id); saveAll(); renderOffers(); renderBill(); } }
+
+    function renderPurchases() {
+      const supSel = document.getElementById("purSupplier"); if (!supSel) return;
+      supSel.innerHTML = `<option value="">-- Supplier --</option>` + suppliers.map(s => `<option value="${s.id}">${s.name}</option>`).join("");
+      document.getElementById("purProd").innerHTML = `<option value="">-- Product --</option>` + products.map(p => `<option value="${p.id}">${p.name}</option>`).join("");
+      const cartDiv = document.getElementById("purchaseItems");
+      if (purchaseCart.length === 0) { cartDiv.innerHTML = `<div class="empty" style="padding:10px;">Abhi koi item nahi</div>`; document.getElementById("purTotal").innerText = "0"; }
+      else {
+        cartDiv.innerHTML = ""; let total = 0;
+        purchaseCart.forEach((it, i) => {
+          total += it.qty * it.buyPrice; const row = document.createElement("div"); row.className = "purchase-item-row"; row.style.background = "rgba(0,0,0,0.1)"; row.style.padding = "12px"; row.style.borderRadius = "12px"; row.style.marginBottom="8px"; row.style.display="flex"; row.style.justifyContent="space-between";
+          row.innerHTML = `<span style="font-size:14px;">${it.name} (${it.qty}x${it.buyPrice})</span><button class="btn-red" onclick="removePurchaseItem(${i})">✕</button>`; cartDiv.appendChild(row);
+        });
+        document.getElementById("purTotal").innerText = total.toFixed(2);
+      }
+      const supList = document.getElementById("supplierList");
+      if (suppliers.length === 0) supList.innerHTML = `<div class="empty">Abhi koi supplier nahi</div>`;
+      else {
+        supList.innerHTML = "";
+        suppliers.forEach(s => {
+          const row = document.createElement("div"); row.className = "supplier-row";
+          row.innerHTML = `<div style="flex:1;"><strong>${s.name}</strong><small style="color:var(--text-muted);">📱 ${s.phone || "-"}</small></div><div style="display:flex; gap:8px;">${s.due > 0 ? `<span class="due-badge pending">₹${s.due.toFixed(2)} dena</span><button class="btn-sm btn-green" onclick="paySupplier('${s.id}')">💵 Pay</button>` : `<span class="due-badge clear">✓ Clear</span>`}</div>`;
+          supList.appendChild(row);
+        });
+      }
+      const histDiv = document.getElementById("purchaseHistory"), branchPurchases = purchases.filter(p => p.branchId === currentBranchId());
+      if (branchPurchases.length === 0) histDiv.innerHTML = `<div class="empty">Abhi koi purchase nahi</div>`;
+      else {
+        histDiv.innerHTML = "";
+        [...branchPurchases].sort((a, b) => b.timestamp - a.timestamp).forEach(p => {
+          const sup = suppliers.find(s => s.id === p.supplierId), row = document.createElement("div"); row.className = "bill-row";
+          row.innerHTML = `<div><strong>${p.id}</strong><small style="color:var(--text-muted);">${sup ? sup.name : "Unknown"}</small></div><div style="text-align:right;"><strong>₹${p.total.toFixed(2)}</strong></div>`; histDiv.appendChild(row);
+        });
+      }
+    }
+    function addSupplier() { const name = document.getElementById("newSupName").value.trim(), phone = document.getElementById("newSupPhone").value.trim(); if (!name) return alert("Name daalo!"); suppliers.push({ id: nextId("SUP-", suppliers), name, phone, due: 0, purchases: [], payments: [] }); document.getElementById("newSupName").value = ""; document.getElementById("newSupPhone").value = ""; saveAll(); renderPurchases(); }
+    function addPurchaseItem() {
+      const productId = document.getElementById("purProd").value, qty = Number(document.getElementById("purQty").value), buyPrice = Number(document.getElementById("purPrice").value);
+      if (!productId || !qty || !buyPrice) return alert("Sab bharo!"); const p = products.find(x => x.id === productId);
+      purchaseCart.push({ productId, name: p.name, qty, buyPrice }); document.getElementById("purQty").value = ""; document.getElementById("purPrice").value = ""; renderPurchases();
+    }
+    function removePurchaseItem(i) { purchaseCart.splice(i, 1); renderPurchases(); }
+    function savePurchase() {
+      const supplierId = document.getElementById("purSupplier").value, paidInput = document.getElementById("purPaid").value;
+      if (!supplierId || purchaseCart.length === 0) return alert("Supplier aur item chuno!");
+      let total = 0; purchaseCart.forEach(it => total += it.qty * it.buyPrice);
+      const paid = paidInput === "" ? total : Math.min(Number(paidInput), total), due = total - paid, supplier = suppliers.find(s => s.id === supplierId);
+      purchaseCart.forEach(it => { const p = products.find(x => x.id === it.productId); if (p) { p.stocks[currentBranchId()] = (p.stocks[currentBranchId()] || 0) + it.qty; p.buy = it.buyPrice; } });
+      const purchase = { id: nextId("PUR-", purchases), timestamp: Date.now(), date: new Date().toLocaleString("en-IN"), branchId: currentBranchId(), staffId: currentUser().id, supplierId, items: purchaseCart.map(i => ({...i})), total, paid, due };
+      purchases.push(purchase); supplier.purchases.push(purchase.id); supplier.due += due; if (paid > 0) supplier.payments.push({ amount: paid, date: purchase.date });
+      purchaseCart = []; document.getElementById("purPaid").value = ""; saveAll(); renderPurchases(); buildProductButtons(); renderStock();
+    }
+    function paySupplier(supplierId) { const s = suppliers.find(x => x.id === supplierId); if (!s || s.due <= 0) return; const amt = Number(prompt(`Dena: ₹${s.due}. Kitna pay?`, s.due)); if (!amt || amt <= 0 || amt > s.due) return alert("Sahi amount!"); s.due -= amt; s.payments.push({ amount: amt, date: new Date().toLocaleString("en-IN") }); saveAll(); renderPurchases(); }
+
+    function setReportScope(scope) { reportScope = scope; document.getElementById("btnThisBranch").classList.toggle("active", scope === "this"); document.getElementById("btnAllBranches").classList.toggle("active", scope === "all"); renderReports(); }
+    function isSameDay(ts1, ts2) { const a = new Date(ts1), b = new Date(ts2); return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate(); }
+    
+    function renderReports() {
+      const now = Date.now(); let scopedBills = reportScope === "this" ? bills.filter(b => b.branchId === currentBranchId()) : bills;
+      const todayBills = scopedBills.filter(b => isSameDay(b.timestamp, now));
+      document.getElementById("todaySales").innerText = todayBills.reduce((s, b) => s + b.total, 0).toFixed(2);
+      document.getElementById("todayBills").innerText = todayBills.length;
+      document.getElementById("todayProfit").innerText = todayBills.reduce((s, b) => s + (b.profit || 0), 0).toFixed(2);
+      document.getElementById("totalDueReport").innerText = customers.reduce((s, c) => s + c.due, 0).toFixed(2);
+      const days = [], labels = [];
+      for (let i = 6; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); d.setHours(0,0,0,0); const dayBills = scopedBills.filter(b => isSameDay(b.timestamp, d.getTime())); days.push(dayBills.reduce((s, b) => s + b.total, 0)); labels.push(d.toLocaleDateString("en-IN", { weekday: "short" })); }
+      if (salesChartInstance) salesChartInstance.destroy();
+      const ctx = document.getElementById('salesChart');
+      if (ctx) {
+        const isLight = document.body.classList.contains('light-mode');
+        salesChartInstance = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [{ label: 'Sales (₹)', data: days, backgroundColor: '#0a84ff', borderRadius: 8 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: isLight ? '#e5e5ea' : '#333' }, ticks: { color: isLight ? '#86868b' : '#a1a1a6' } }, x: { grid: { display: false }, ticks: { color: isLight ? '#86868b' : '#a1a1a6' } } } } });
+      }
+      const cutoff = now - 30 * 24 * 60 * 60 * 1000, productCount = {};
+      scopedBills.filter(b => b.timestamp >= cutoff).forEach(b => b.items.forEach(it => { const key = it.name; if (!productCount[key]) productCount[key] = { qty: 0, revenue: 0 }; productCount[key].qty += it.qty; productCount[key].revenue += (it.effectivePrice || it.price) * it.qty; }));
+      const topArr = Object.entries(productCount).sort((a, b) => b[1].qty - a[1].qty).slice(0, 5), topDiv = document.getElementById("topProducts");
+      if (topArr.length === 0) topDiv.innerHTML = `<div class="empty">Abhi koi sale nahi</div>`;
+      else {
+        topDiv.innerHTML = "";
+        topArr.forEach(([name, data], i) => { topDiv.innerHTML += `<div class="top-item" style="display:flex; justify-content:space-between; padding:16px 0; border-bottom:1px solid var(--border);"><div style="display:flex; align-items:center; gap:16px;"><div style="width:28px; height:28px; border-radius:50%; background:rgba(255,255,255,0.1); color:var(--text); text-align:center; line-height:28px; font-size:14px; font-weight:600; border:1px solid var(--border);">${i + 1}</div><div><strong>${name}</strong><small style="color:var(--text-muted); display:block; font-size:13px;">${data.qty} baar bika</small></div></div><span style="color:var(--green); font-weight:600; font-size:16px;">₹${data.revenue.toFixed(0)}</span></div>`; });
+      }
+      const recentDiv = document.getElementById("recentBills"), recentBills = [...scopedBills].sort((a, b) => b.timestamp - a.timestamp).slice(0, 10);
+      if (recentBills.length === 0) recentDiv.innerHTML = `<div class="empty">Abhi koi bill nahi</div>`;
+      else {
+        recentDiv.innerHTML = "";
+        recentBills.forEach(b => { const row = document.createElement("div"); row.className = "bill-row"; row.onclick = () => viewBill(b.id); row.innerHTML = `<div><strong>${b.id}</strong><small style="color:var(--text-muted); font-size:13px;">${b.customerName} · ${b.date}</small></div><div style="text-align:right;"><strong>₹${b.total.toFixed(2)}</strong><small style="color:var(--text-muted); display:block; font-size:12px;">${b.mode}</small></div>`; recentDiv.appendChild(row); });
+      }
+    }
+
+    function viewBill(billId) {
+      const b = bills.find(x => x.id === billId); if (!b) return;
+      const branch = branches.find(br => br.id === b.branchId) || { name: "Main Store", address: "Your City" };
+      let html = `
+        <div id="printArea">
+          <div style="text-align:center; margin-bottom: 20px;">
+            <h2 style="color:var(--text); margin:0; font-size:24px; font-weight:600;">${branch.name}</h2>
+            <p style="font-size:14px; color:var(--text-muted); margin:4px 0;">${branch.address}</p>
+            <h3 style="margin-top:16px; font-size:15px; border-bottom: 1px solid var(--border); padding-bottom: 8px; color:var(--text);">TAX INVOICE</h3>
+          </div>
+          <div style="display:flex; justify-content:space-between; font-size:14px; margin-bottom:16px; color:var(--text-muted);">
+            <div><strong style="color:var(--text);">Bill:</strong> ${b.id}<br><strong style="color:var(--text);">Date:</strong> ${b.date.split(',')[0]}</div>
+            <div style="text-align:right;"><strong style="color:var(--text);">Customer:</strong> ${b.customerName}<br><strong style="color:var(--text);">Cashier:</strong> ${b.staffName}</div>
+          </div>
+          <table style="width:100%; border-collapse: collapse; font-size:14px; margin-bottom:16px;">
+            <thead><tr style="border-bottom: 1px solid var(--border); border-top: 1px solid var(--border); color:var(--text);"><th style="text-align:left; padding:8px 0;">Item</th><th style="text-align:center;">Qty</th><th style="text-align:right;">Rate</th><th style="text-align:right;">Amt</th></tr></thead><tbody>`;
+      b.items.forEach(it => { const eff = it.effectivePrice || it.price; html += `<tr style="color:var(--text-muted);"><td style="padding:8px 0;">${it.name}</td><td style="text-align:center;">${it.qty}</td><td style="text-align:right;">${eff.toFixed(2)}</td><td style="text-align:right; color:var(--text);">${(eff*it.qty).toFixed(2)}</td></tr>`; });
+      html += `</tbody></table>
+          <div style="border-top: 1px solid var(--border); padding-top: 12px; font-size:14px; color:var(--text-muted);">
+            <div style="display:flex; justify-content:space-between; margin-bottom:6px;"><span>Subtotal:</span><span>₹${b.subtotal.toFixed(2)}</span></div>`;
+      if (b.cartDiscount > 0) html += `<div style="display:flex; justify-content:space-between; color:var(--orange); margin-bottom:6px;"><span>Offer Discount:</span><span>-₹${b.cartDiscount.toFixed(2)}</span></div>`;
+      html += `<div style="display:flex; justify-content:space-between; margin-bottom:6px;"><span>Total GST:</span><span>₹${b.gstTotal.toFixed(2)}</span></div>
+            <div style="display:flex; justify-content:space-between; font-weight:600; font-size:20px; margin-top:12px; color:var(--text); border-top: 1px solid var(--border); padding-top:12px;"><span>Grand Total:</span><span>₹${b.total.toFixed(2)}</span></div>
+          </div>
+          <div style="display:flex; justify-content:space-between; font-size:14px; margin-top:16px; color:var(--text-muted);">
+            <span>Paid (${b.mode}): ₹${b.paid.toFixed(2)}</span>
+            ${b.due > 0 ? `<span style="color:var(--red);">Due: ₹${b.due.toFixed(2)}</span>` : ''}
+          </div>
+          <div style="text-align:center; margin-top: 24px;"><div id="qrcode" style="display:inline-block;"></div><p style="font-size:12px; color:var(--text-muted); margin-top:8px;">Scan to view bill</p></div>
+          <div style="text-align:center; font-size:13px; margin-top:32px; color:var(--text-muted);">Thank you for shopping!<br>Powered by DukLivo</div>
+        </div>
+        <div style="display:flex; gap:12px; margin-top:24px;" class="no-print">
+          <button onclick="window.print()" class="btn-green" style="flex:1;">🖨️ Print</button>
+          <button onclick="shareOnWhatsApp('${b.id}')" class="btn-green" style="flex:1; background:#25D366;">💬 WhatsApp</button>
+          <button onclick="closeModal()" class="btn-orange" style="flex:1;">Close</button>
+        </div>`;
+      document.getElementById("modalContent").innerHTML = html; document.getElementById("modalBg").classList.add("show");
+      document.getElementById("qrcode").innerHTML = "";
+      new QRCode(document.getElementById("qrcode"), { text: `Bill: ${b.id}\nTotal: Rs.${b.total.toFixed(2)}\nDate: ${b.date.split(',')[0]}\nThank you!`, width: 120, height: 120, colorDark : "#000000", colorLight : "#ffffff" });
+    }
+    function closeModal() { document.getElementById("modalBg").classList.remove("show"); }
+    
+    function shareOnWhatsApp(billId) {
+      const b = bills.find(x => x.id === billId), c = customers.find(x => x.id === b.customerId);
+      if (!c || !c.phone) return alert("Customer ka phone number nahi hai!");
+      let msg = `*DukLivo Receipt*\nBill No: ${b.id}\nDate: ${b.date}\n\n`;
+      b.items.forEach(it => { msg += `${it.name} x${it.qty} = ₹${((it.effectivePrice || it.price) * it.qty).toFixed(2)}\n`; });
+      msg += `\n*Total: ₹${b.total.toFixed(2)}*\nPaid: ₹${b.paid.toFixed(2)}\n`; if (b.due > 0) msg += `Udhaar: ₹${b.due.toFixed(2)}\n`;
+      msg += `\nDhanyawad!`;
+      const phone = c.phone.replace(/\D/g, ''), formattedPhone = phone.length === 10 ? '91' + phone : phone;
+      window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+    }
+
+    function renderStaff() {
+      const list = document.getElementById("staffList"); if (!list) return;
+      if (staff.length === 0) return list.innerHTML = `<div class="empty">Abhi koi staff nahi</div>`;
+      list.innerHTML = "";
+      staff.forEach(s => {
+        const row = document.createElement("div"); row.className = "staff-row"; const isSelf = session && s.id === session.staffId;
+        const delBtn = !isSelf && s.role !== "owner" ? `<button class="btn-sm btn-red" onclick="deleteStaff('${s.id}')">🗑️</button>` : "";
+        row.innerHTML = `<div style="flex:1;"><strong>${s.name} ${isSelf ? "(You)" : ""}</strong><small style="color:var(--text-muted);">📱 ${s.phone || "-"}</small></div><div style="display:flex; gap:12px; align-items:center;"><span class="role-badge ${s.role}" style="background:rgba(255,255,255,0.1); border:1px solid var(--border); color:var(--text); padding:6px 12px; border-radius:12px; font-size:12px; text-transform:capitalize;">${s.role}</span><button class="btn-sm ${s.active ? 'btn-orange' : 'btn-green'}" onclick="toggleStaff('${s.id}')">${s.active ? 'Disable' : 'Enable'}</button>${delBtn}</div>`;
+        list.appendChild(row);
+      });
+    }
+    function addStaff() { const name = document.getElementById("stName").value.trim(), phone = document.getElementById("stPhone").value.trim(), role = document.getElementById("stRole").value, pin = document.getElementById("stPin").value.trim(); if (!name || !pin) return alert("Naam aur PIN zaroori!"); if (pin.length !== 4 || !/^\d+$/.test(pin)) return alert("PIN 4 digit ka hona chahiye!"); if (staff.some(s => s.pin === pin)) return alert("Ye PIN already used hai!"); staff.push({ id: nextId("S", staff), name, phone, role, pin, active: true }); document.getElementById("stName").value = ""; document.getElementById("stPhone").value = ""; document.getElementById("stPin").value = ""; logActivity("Staff Added", `${name} (${role})`); saveAll(); renderStaff(); }
+    function toggleStaff(id) { const s = staff.find(x => x.id === id); if (!s) return; if (s.role === "owner" && s.active && staff.filter(x => x.role === "owner" && x.active).length === 1) return alert("Kam se kam ek owner active hona chahiye!"); s.active = !s.active; logActivity("Staff " + (s.active ? "Enabled" : "Disabled"), s.name); saveAll(); renderStaff(); }
+    function deleteStaff(id) { const s = staff.find(x => x.id === id); if (!s) return; if (session && session.staffId === id) return alert("Khud ko delete nahi kar sakte!"); if (confirm(`${s.name} ko delete karna hai?`)) { staff = staff.filter(x => x.id !== id); logActivity("Staff Deleted", s.name); saveAll(); renderStaff(); } }
+    function renderActivity() { const list = document.getElementById("activityList"); if (!list) return; if (activities.length === 0) return list.innerHTML = `<div class="empty">Abhi koi activity nahi</div>`; const recent = [...activities].sort((a, b) => b.timestamp - a.timestamp).slice(0, 30); list.innerHTML = ""; recent.forEach(a => { const row = document.createElement("div"); row.className = "activity-row"; const t = new Date(a.timestamp).toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }); row.innerHTML = `<div style="flex:1;"><strong>${a.action}</strong><small style="color:var(--text-muted);">${a.detail} · by ${a.staffName}</small></div><div style="font-size:12px; color:var(--text-muted);">${t}</div>`; list.appendChild(row); }); }
+    
+    function renderBranches() { const list = document.getElementById("branchList"); if (!list) return; if (branches.length === 0) return list.innerHTML = `<div class="empty">Abhi koi branch nahi</div>`; list.innerHTML = ""; branches.forEach(b => { const isCurrent = b.id === currentBranchId(); const productCount = products.filter(p => (p.stocks[b.id] || 0) > 0).length; const billCount = bills.filter(bill => bill.branchId === b.id).length; const row = document.createElement("div"); row.className = "branch-row"; const delBtn = branches.length > 1 ? `<button class="btn-sm btn-red" onclick="deleteBranch('${b.id}')">🗑️</button>` : ""; row.innerHTML = `<div style="flex:1;"><strong>${b.name} ${isCurrent ? "<span style='color:var(--green); font-size:12px;'>● Current</span>" : ""}</strong><small style="color:var(--text-muted);">📍 ${b.address || "-"} · ${productCount} products · ${billCount} bills</small></div><div>${delBtn}</div>`; list.appendChild(row); }); }
+    function addBranch() { const name = document.getElementById("brName").value.trim(), address = document.getElementById("brAddress").value.trim(); if (!name) return alert("Branch name daalo!"); const newId = "BR" + (branches.length + 1); branches.push({ id: newId, name, address }); products.forEach(p => { p.stocks[newId] = 0; }); document.getElementById("brName").value = ""; document.getElementById("brAddress").value = ""; logActivity("Branch Added", name); saveAll(); renderBranches(); document.getElementById("branchSelector").innerHTML = branches.map(b => `<option value="${b.id}" ${b.id === session.branchId ? 'selected' : ''}>${b.name}</option>`).join(""); }
+    function deleteBranch(id) { if (id === currentBranchId()) return alert("Current branch delete nahi kar sakte!"); if (branches.length <= 1) return alert("Ek branch toh honi chahiye!"); const b = branches.find(x => x.id === id); if (confirm(`${b.name} delete karna hai?`)) { branches = branches.filter(x => x.id !== id); products.forEach(p => { delete p.stocks[id]; }); logActivity("Branch Deleted", b.name); saveAll(); renderBranches(); } }
+
+    function syncToServer() { fetch('/api/data', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ branches, staff, products, customers, bills, suppliers, purchases, offers, activities }) }).then(r => r.json()).then(j => { if (j.ok) updateServerStatus(true); }).catch(() => updateServerStatus(false)); }
+    async function syncFromServer() {
+      try {
+        const res = await fetch('/api/data'), json = await res.json(); if (!json.ok || !json.data) return false;
+        const d = json.data;
+        if (d.branches) localStorage.setItem("dl_branches", JSON.stringify(d.branches)); if (d.staff) localStorage.setItem("dl_staff", JSON.stringify(d.staff));
+        if (d.products) localStorage.setItem("dl_products", JSON.stringify(d.products)); if (d.customers) localStorage.setItem("dl_customers", JSON.stringify(d.customers));
+        if (d.bills) localStorage.setItem("dl_bills", JSON.stringify(d.bills)); if (d.suppliers) localStorage.setItem("dl_suppliers", JSON.stringify(d.suppliers));
+        if (d.purchases) localStorage.setItem("dl_purchases", JSON.stringify(d.purchases)); if (d.offers) localStorage.setItem("dl_offers", JSON.stringify(d.offers));
+        if (d.activities) localStorage.setItem("dl_activities", JSON.stringify(d.activities));
+        updateServerStatus(true); return true;
+      } catch (e) { updateServerStatus(false); return false; }
+    }
+    function updateServerStatus(online) { const el = document.getElementById('serverStatus'); if (!el) return; el.style.color = online ? 'var(--green)' : 'var(--red)'; el.textContent = online ? '● Online' : '● Offline'; }
+
+    async function bootApp() { await syncFromServer(); loadAll(); saveAll(); if (session && staff.find(s => s.id === session.staffId && s.active)) startApp(); else { session = null; document.getElementById("loginScreen").style.display = "flex"; } }
+    bootApp();
+  </script>
+</body>
+</html>
